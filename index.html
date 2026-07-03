@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>סימולטור תקציב משפחתי</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f4;
+      --panel: #ffffff;
+      --panel-soft: #eef3ec;
+      --text: #1d2a26;
+      --muted: #64736d;
+      --line: #dce4df;
+      --green: #15803d;
+      --red: #b42318;
+      --blue: #2563eb;
+      --amber: #b7791f;
+      --teal: #0f766e;
+      --shadow: 0 14px 40px rgba(29, 42, 38, 0.08);
+      --radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    button, input, select { font: inherit; }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 14px 36px;
+    }
+
+    header {
+      display: grid;
+      gap: 14px;
+      padding: 8px 0 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 7vw, 54px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      max-width: 760px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      min-height: 42px;
+      padding: 9px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+    }
+
+    .btn.primary {
+      background: #1f3a31;
+      border-color: #1f3a31;
+      color: #fff;
+    }
+
+    .btn.active {
+      border-color: #1f3a31;
+      background: #dfe9e2;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-sticky {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      margin: 0 -14px;
+      padding: 8px 14px 10px;
+      background: rgba(246, 247, 244, 0.96);
+      border-bottom: 1px solid rgba(220, 228, 223, 0.9);
+      backdrop-filter: blur(12px);
+    }
+
+    .summary-cards .card {
+      min-height: 82px;
+      padding: 9px;
+      gap: 4px;
+      box-shadow: 0 8px 24px rgba(29, 42, 38, 0.07);
+    }
+
+    .summary-cards .label {
+      font-size: 11px;
+    }
+
+    .summary-cards .value {
+      font-size: clamp(18px, 5vw, 28px);
+    }
+
+    .card, .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .card {
+      padding: 14px;
+      min-height: 118px;
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .value {
+      font-size: clamp(22px, 5.5vw, 34px);
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .value.good { color: var(--green); }
+    .value.bad { color: var(--red); }
+    .value.neutral { color: var(--blue); }
+
+    .section {
+      padding: 14px;
+      margin-top: 12px;
+      scroll-margin-top: 180px;
+    }
+
+    .section h2 {
+      margin: 0 0 12px;
+      font-size: 19px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+    }
+
+    .control-groups {
+      display: grid;
+      gap: 12px;
+    }
+
+    .control-group {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      background: #fbfcfa;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .control-group h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .control-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .control {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .control-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .control label {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .control .hint {
+      color: #31433d;
+      font-size: 15px;
+      font-weight: 750;
+      direction: ltr;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #1f3a31;
+    }
+
+    input[type="number"], select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      background: #fff;
+      color: var(--text);
+      direction: ltr;
+      text-align: left;
+    }
+
+    .input-row input[type="number"] {
+      max-width: 160px;
+      justify-self: start;
+    }
+
+    select {
+      direction: rtl;
+      text-align: right;
+    }
+
+    .switch-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcfa;
+    }
+
+    .switch-row input {
+      width: 24px;
+      height: 24px;
+      accent-color: #1f3a31;
+      flex: 0 0 auto;
+    }
+
+    .charts {
+      display: grid;
+      gap: 12px;
+    }
+
+    .chart-box {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: #fbfcfa;
+    }
+
+    .chart-box h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 230px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 820px;
+      direction: rtl;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    th {
+      background: var(--panel-soft);
+      color: #31433d;
+      font-size: 13px;
+      position: sticky;
+      top: 0;
+    }
+
+    td.number {
+      direction: ltr;
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sources {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .scenario-summary {
+      display: grid;
+      gap: 10px;
+    }
+
+    .scenario-lead {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcfa;
+      color: #31433d;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .scenario-card {
+      display: grid;
+      gap: 6px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .scenario-card strong {
+      font-size: 15px;
+    }
+
+    .scenario-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: var(--panel-soft);
+      color: #31433d;
+      font-size: 12px;
+      width: fit-content;
+    }
+
+    @media (min-width: 760px) {
+      .app { padding: 28px 22px 48px; }
+      .dashboard-sticky {
+        margin: 0 -22px;
+        padding: 10px 22px 12px;
+      }
+      header {
+        grid-template-columns: 1fr auto;
+        align-items: end;
+      }
+      .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .control-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .input-row { grid-template-columns: 1fr 112px; }
+      .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .section { padding: 18px; }
+    }
+
+    @media (min-width: 1040px) {
+      .summary-cards { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .scenario-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <span class="pill">יולי 2026 - יוני 2028</span>
+        <h1>סימולטור תקציב משפחתי</h1>
+        <p class="subtitle">שליטה בהכנסה, הוצאות, משכנתא, הלוואות, איחוד חובות ותזרימי מזומן צפויים. כל החישובים נעשים מקומית בדפדפן.</p>
+      </div>
+      <div class="toolbar" aria-label="תרחישים">
+        <button class="btn active" data-preset="conservative">שמרני</button>
+        <button class="btn" data-preset="bridge">גישור ל-0</button>
+        <button class="btn" data-preset="consolidation">איחוד תיאורטי</button>
+        <button class="btn primary" data-preset="optimal">מיטבי לשנתיים</button>
+        <button class="btn" id="exportBtn">ייצוא לשיתוף</button>
+        <button class="btn" id="resetBtn">איפוס</button>
+      </div>
+    </header>
+
+    <section class="grid cards summary-cards dashboard-sticky" aria-label="סיכום">
+      <article class="card">
+        <div class="label">גרעון/עודף חודשי נוכחי</div>
+        <div class="value" id="monthlyNet">₪0</div>
+        <div class="label" id="monthlyNetHint"></div>
+      </article>
+      <article class="card">
+        <div class="label">מרווח ביטחון מינימלי</div>
+        <div class="value" id="minCash">₪0</div>
+        <div class="label">היתרה הנמוכה ביותר בתקופה</div>
+      </article>
+      <article class="card">
+        <div class="label">יתרת מזומן בעוד שנה</div>
+        <div class="value" id="cash12">₪0</div>
+        <div class="label">סוף יוני 2027</div>
+      </article>
+      <article class="card">
+        <div class="label">יתרת מזומן בעוד שנתיים</div>
+        <div class="value" id="cash24">₪0</div>
+        <div class="label">סוף יוני 2028</div>
+      </article>
+      <article class="card">
+        <div class="label">הלוואות לאיחוד</div>
+        <div class="value neutral" id="consolidationPrincipal">₪0</div>
+        <div class="label">יתרת הלוואות רגילות לפי PDF</div>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2>נתונים לשליטה</h2>
+      <div class="control-groups" id="controls"></div>
+    </section>
+
+    <section class="section">
+      <h2>תזרים מזומנים עתידי</h2>
+      <div class="controls">
+        <label class="switch-row">
+          <span>
+            <strong>100 אלף אפשריים בחודשיים הקרובים</strong><br>
+            <span class="hint">כבוי כברירת מחדל בתרחיש שמרני</span>
+          </span>
+          <input id="possibleCashEnabled" type="checkbox">
+        </label>
+        <div class="control">
+          <div class="control-head">
+            <label for="possibleCashMonth">חודש קבלת 100 אלף</label>
+            <span class="hint">אם התזרים מופעל</span>
+          </div>
+          <select id="possibleCashMonth"></select>
+        </div>
+        <label class="switch-row">
+          <span>
+            <strong>תרחיש איחוד הלוואות</strong><br>
+            <span class="hint">מימון מחדש: מחליף החזר חודשי בלי להפחית את כל היתרה מהמזומן</span>
+          </span>
+          <input id="consolidationEnabled" type="checkbox">
+        </label>
+        <div class="control">
+          <div class="control-head">
+            <label for="consolidationMonth">חודש איחוד</label>
+            <span class="hint">משנה את החזרי ההלוואות מאותו חודש</span>
+          </div>
+          <select id="consolidationMonth"></select>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>פירוט מצב</h2>
+      <div class="grid cards detail-cards">
+        <article class="card">
+          <div class="label">חודש ראשון מתחת לאפס</div>
+          <div class="value neutral" id="negativeMonth">אין</div>
+          <div class="label">לפי התרחיש הפעיל</div>
+        </article>
+        <article class="card">
+          <div class="label">תזרימים מוגדרים</div>
+          <div class="value neutral" id="definedInflows">₪0</div>
+          <div class="label">קרן השתלמות + סכום אפשרי</div>
+        </article>
+        <article class="card">
+          <div class="label">השפעת איחוד לשנתיים</div>
+          <div class="value" id="consolidationImpact">₪0</div>
+          <div class="label" id="consolidationHint"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>תרחישים מיטביים</h2>
+      <div class="scenario-summary">
+        <div class="scenario-lead" id="scenarioLead"></div>
+        <div class="scenario-list" id="scenarioList"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>גרפים</h2>
+      <div class="charts">
+        <div class="chart-box">
+          <h3>יתרת מזומן בכל חודש</h3>
+          <canvas id="cashChart" width="800" height="460"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>גרעון / עודף חודשי</h3>
+          <canvas id="netChart" width="800" height="460"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>הוצאה חודשית לפני/אחרי איחוד</h3>
+          <canvas id="expenseChart" width="800" height="460"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>תזרימים חד פעמיים</h3>
+          <canvas id="inflowChart" width="800" height="460"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>טבלת חודשים</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>חודש</th>
+              <th>הכנסה</th>
+              <th>מחיה</th>
+              <th>משכנתא</th>
+              <th>הלוואות</th>
+              <th>תזרים חד פעמי</th>
+              <th>נטו חודשי</th>
+              <th>יתרת מזומן</th>
+            </tr>
+          </thead>
+          <tbody id="projectionRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>מקורות והנחות</h2>
+      <div class="sources">
+        <div>PDF: <strong>דוח ריכוז נתונים - 26-06-2026(1).pdf</strong> - מקור נתוני ההלוואות בלבד.</div>
+        <div>Excel: <strong>ניהול-תקציב-משפחתי-הסולידית.xlsx</strong> - מקור ייחוס כללי להוצאות המשפחה, לא למצב ההלוואות.</div>
+        <div>מה-PDF: יתרת הלוואות רגילות <strong>₪649,935</strong>, החזר חודשי צפוי <strong>₪15,342</strong>. פירוט: מקס ₪2,298, כאל ₪5,159, ישראכרט ₪4,068, לאומי ₪3,817.</div>
+        <div>הנחות לתפעול: הוצאות מחיה ברירת מחדל עודכנו לכ-₪22,000. קרן ההשתלמות מוגדרת כ-₪130,000 באוקטובר 2026. מסגרות אשראי מתחדשות מה-PDF אינן נכללות בהחזר ההלוואות הרגיל.</div>
+      </div>
+    </section>
+  </main>
+
+  <script id="sharedState" type="application/json">{}</script>
+  <script>
+    const ils = new Intl.NumberFormat("he-IL", {
+      style: "currency",
+      currency: "ILS",
+      maximumFractionDigits: 0
+    });
+
+    const compactIls = new Intl.NumberFormat("he-IL", {
+      notation: "compact",
+      compactDisplay: "short",
+      maximumFractionDigits: 1
+    });
+
+    const months = [
+      "יול 2026", "אוג 2026", "ספט 2026", "אוק 2026", "נוב 2026", "דצמ 2026",
+      "ינו 2027", "פבר 2027", "מרץ 2027", "אפר 2027", "מאי 2027", "יונ 2027",
+      "יול 2027", "אוג 2027", "ספט 2027", "אוק 2027", "נוב 2027", "דצמ 2027",
+      "ינו 2028", "פבר 2028", "מרץ 2028", "אפר 2028", "מאי 2028", "יונ 2028"
+    ];
+
+    const defaults = {
+      income: 30000,
+      living: 22000,
+      mortgage: 12000,
+      loanPayment: 15342,
+      cashNow: 218000,
+      depositAmount: 130000,
+      depositMonth: 3,
+      possibleCash: 100000,
+      possibleCashMonth: 1,
+      possibleCashEnabled: false,
+      consolidationEnabled: false,
+      consolidationMonth: 3,
+      consolidationPayoff: 649935,
+      consolidatedPayment: 9000
+    };
+
+    const controlsConfig = [
+      ["income", "הכנסה נטו חודשית", 0, 90000, 1000, "₪"],
+      ["living", "הוצאה נטו מחיה חודשית", 0, 90000, 1000, "₪"],
+      ["mortgage", "משכנתא חודשית", 0, 30000, 500, "₪"],
+      ["loanPayment", "החזרי הלוואות רגילים כיום (PDF)", 0, 40000, 250, "₪"],
+      ["cashNow", "מזומן זמין עכשיו", -250000, 800000, 5000, "₪"],
+      ["depositAmount", "קרן השתלמות שנפתחת באוקטובר", 0, 500000, 5000, "₪"],
+      ["possibleCash", "סכום אפשרי נוסף", 0, 500000, 5000, "₪"],
+      ["consolidationPayoff", "יתרת הלוואות לאיחוד (PDF)", 0, 1500000, 10000, "₪"],
+      ["consolidatedPayment", "החזר חודשי אחרי איחוד", 0, 40000, 250, "₪"]
+    ];
+
+    const controlGroups = [
+      { title: "תזרים חודשי", keys: ["income", "living", "mortgage", "loanPayment"] },
+      { title: "מזומן ותזרימים", keys: ["cashNow", "depositAmount", "possibleCash"] },
+      { title: "איחוד תיאורטי", keys: ["consolidationPayoff", "consolidatedPayment"] }
+    ];
+
+    const storageKey = "family-budget-simulator-v2";
+    let state = loadState();
+
+    function embeddedState() {
+      const el = document.getElementById("sharedState");
+      if (!el) return {};
+      try {
+        const parsed = JSON.parse(el.textContent || "{}");
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function loadState() {
+      const embedded = embeddedState();
+      const hasEmbedded = Object.keys(embedded).length > 0;
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+        return { ...defaults, ...embedded, ...(hasEmbedded ? {} : saved) };
+      } catch {
+        return { ...defaults, ...embedded };
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function exportCurrentSimulator() {
+      const clone = document.documentElement.cloneNode(true);
+      const shared = clone.querySelector("#sharedState");
+      if (shared) {
+        shared.textContent = JSON.stringify(state, null, 2);
+      }
+      clone.querySelectorAll(".active").forEach((el) => el.classList.remove("active"));
+      const activePreset = clone.querySelector('[data-preset="optimal"]');
+      if (activePreset) activePreset.classList.add("active");
+      const html = "<!doctype html>\n" + clone.outerHTML;
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      link.href = url;
+      link.download = `family-budget-simulator-${stamp}.html`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function fmt(value) {
+      return ils.format(Math.round(value));
+    }
+
+    function buildControls() {
+      const container = document.getElementById("controls");
+      container.innerHTML = "";
+      const configByKey = Object.fromEntries(controlsConfig.map((item) => [item[0], item]));
+      controlGroups.forEach((group) => {
+        const groupEl = document.createElement("section");
+        groupEl.className = "control-group";
+        groupEl.innerHTML = `<h3>${group.title}</h3><div class="control-grid"></div>`;
+        const grid = groupEl.querySelector(".control-grid");
+        group.keys.forEach((key) => {
+          const [, label, min, max, step] = configByKey[key];
+          const wrap = document.createElement("div");
+          wrap.className = "control";
+          wrap.innerHTML = `
+            <div class="control-head">
+              <label for="${key}">${label}</label>
+              <span class="hint">${fmt(state[key])}</span>
+            </div>
+            <div class="input-row">
+              <input id="${key}Range" type="range" min="${min}" max="${max}" step="${step}" value="${state[key]}">
+              <input id="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${Math.round(state[key])}">
+            </div>
+          `;
+          grid.appendChild(wrap);
+          const range = wrap.querySelector(`#${key}Range`);
+          const input = wrap.querySelector(`#${key}`);
+          const hint = wrap.querySelector(".hint");
+          const update = (raw) => {
+            state[key] = Number(raw) || 0;
+            range.value = state[key];
+            input.value = Math.round(state[key]);
+            hint.textContent = fmt(state[key]);
+            saveState();
+            render();
+          };
+          range.addEventListener("input", (event) => update(event.target.value));
+          input.addEventListener("input", (event) => update(event.target.value));
+        });
+        container.appendChild(groupEl);
+      });
+    }
+
+    function buildMonthSelect(id, value) {
+      const select = document.getElementById(id);
+      select.innerHTML = months.map((month, index) => `<option value="${index}">${month}</option>`).join("");
+      select.value = value;
+      select.addEventListener("change", (event) => {
+        state[id] = Number(event.target.value);
+        saveState();
+        render();
+      });
+    }
+
+    function bindSwitch(id) {
+      const el = document.getElementById(id);
+      el.checked = Boolean(state[id]);
+      el.addEventListener("change", () => {
+        state[id] = el.checked;
+        saveState();
+        render();
+      });
+    }
+
+    function presetState(name, base = state) {
+      const next = { ...base };
+      if (name === "conservative") {
+        return {
+          ...next,
+          possibleCashEnabled: false,
+          consolidationEnabled: false
+        };
+      }
+      if (name === "bridge") {
+        return {
+          ...next,
+          possibleCashEnabled: true,
+          possibleCashMonth: Math.min(next.possibleCashMonth, 1),
+          consolidationEnabled: false
+        };
+      }
+      if (name === "consolidation") {
+        return {
+          ...next,
+          possibleCashEnabled: false,
+          consolidationEnabled: true,
+          consolidationMonth: next.consolidationMonth ?? next.depositMonth
+        };
+      }
+      return next;
+    }
+
+    function scenarioCandidates(base = state) {
+      const conservative = presetState("conservative", base);
+      const bridge = presetState("bridge", base);
+      const consolidation = presetState("consolidation", base);
+      return [
+        { key: "conservative", name: "שמרני", description: "קרן השתלמות בלבד, בלי 100k או איחוד.", state: conservative },
+        { key: "bridge", name: "גישור ל-0", description: "מפעיל את 100k בחודש הקרוב כדי לבדוק אם זה מונע יתרה שלילית.", state: bridge },
+        { key: "consolidation", name: "איחוד תיאורטי", description: "מחליף את החזרי ההלוואות בהחזר המאוחד שהוגדר ידנית; יתרת החוב אינה יורדת מהמזומן.", state: consolidation },
+        {
+          key: "bridge-consolidation",
+          name: "100k + איחוד",
+          description: "משלב גישור קצר עם איחוד תיאורטי כדי להקטין לחץ חודשי.",
+          state: { ...consolidation, possibleCashEnabled: true, possibleCashMonth: bridge.possibleCashMonth }
+        }
+      ];
+    }
+
+    function scenarioMetrics(candidate) {
+      const rows = project(candidate.state);
+      const minCash = Math.min(...rows.map((row) => row.cash));
+      const avgOutflow = rows.reduce((sum, row) => sum + row.outflow, 0) / rows.length;
+      return { ...candidate, rows, minCash, cash12: rows[11].cash, cash24: rows[23].cash, avgOutflow };
+    }
+
+    function compareScenarios(a, b) {
+      if (b.minCash !== a.minCash) return b.minCash - a.minCash;
+      if (b.cash24 !== a.cash24) return b.cash24 - a.cash24;
+      return a.avgOutflow - b.avgOutflow;
+    }
+
+    function bestScenario(base = state) {
+      return scenarioCandidates(base).map(scenarioMetrics).sort(compareScenarios)[0];
+    }
+
+    function applyPreset(name) {
+      if (name === "optimal") {
+        state = { ...bestScenario(state).state };
+      } else {
+        state = presetState(name, state);
+      }
+      document.querySelectorAll("[data-preset]").forEach((btn) => btn.classList.toggle("active", btn.dataset.preset === name));
+      syncForm();
+      saveState();
+      render();
+    }
+
+    function syncForm() {
+      controlsConfig.forEach(([key]) => {
+        const range = document.getElementById(`${key}Range`);
+        const input = document.getElementById(key);
+        if (range) range.value = state[key];
+        if (input) input.value = Math.round(state[key]);
+      });
+      ["possibleCashMonth", "consolidationMonth"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = state[id];
+      });
+      ["possibleCashEnabled", "consolidationEnabled"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = Boolean(state[id]);
+      });
+      document.querySelectorAll("#controls .control .hint").forEach((hint, index) => {
+        const key = controlsConfig[index]?.[0];
+        if (key) hint.textContent = fmt(state[key]);
+      });
+    }
+
+    function project(inputState = state) {
+      const s = inputState;
+      let cash = s.cashNow;
+      return months.map((month, index) => {
+        let inflow = 0;
+        const notes = [];
+        if (index === s.depositMonth) {
+          inflow += s.depositAmount;
+          notes.push("קרן השתלמות");
+        }
+        if (s.possibleCashEnabled && index === s.possibleCashMonth) {
+          inflow += s.possibleCash;
+          notes.push("100k");
+        }
+        let loanPayment = s.loanPayment;
+        let consolidationPayoff = 0;
+        if (s.consolidationEnabled && index >= s.consolidationMonth) {
+          loanPayment = s.consolidatedPayment;
+        }
+        if (s.consolidationEnabled && index === s.consolidationMonth) {
+          consolidationPayoff = s.consolidationPayoff;
+          notes.push("איחוד");
+        }
+
+        const outflow = s.living + s.mortgage + loanPayment;
+        const net = s.income + inflow - outflow;
+        cash += net;
+        return { month, index, income: s.income, living: s.living, mortgage: s.mortgage, loanPayment, inflow, consolidationPayoff, outflow, net, cash, notes };
+      });
+    }
+
+    function setValue(id, value, kind = "") {
+      const el = document.getElementById(id);
+      el.textContent = value;
+      el.classList.remove("good", "bad", "neutral");
+      if (kind) el.classList.add(kind);
+    }
+
+    function renderCards(rows) {
+      const currentLoanPayment = state.consolidationEnabled && state.consolidationMonth === 0 ? state.consolidatedPayment : state.loanPayment;
+      const currentOutflow = state.living + state.mortgage + currentLoanPayment;
+      const baseNet = state.income - currentOutflow;
+      const minCash = Math.min(...rows.map((row) => row.cash));
+      const definedInflows = state.depositAmount + state.possibleCash;
+      const monthlyConsolidationSavings = state.loanPayment - state.consolidatedPayment;
+      const consolidationMonths = Math.max(0, months.length - state.consolidationMonth);
+      const consolidationTwoYearImpact = monthlyConsolidationSavings * consolidationMonths;
+      setValue("monthlyNet", fmt(baseNet), baseNet < 0 ? "bad" : "good");
+      document.getElementById("monthlyNetHint").textContent = `הוצאה חודשית פעילה: ${fmt(currentOutflow)}`;
+      setValue("minCash", fmt(minCash), minCash < 0 ? "bad" : "good");
+      setValue("cash12", fmt(rows[11].cash), rows[11].cash < 0 ? "bad" : "good");
+      setValue("cash24", fmt(rows[23].cash), rows[23].cash < 0 ? "bad" : "good");
+      setValue("consolidationPrincipal", fmt(state.consolidationPayoff), "neutral");
+      const firstNegative = rows.find((row) => row.cash < 0);
+      setValue("negativeMonth", firstNegative ? firstNegative.month : "אין", firstNegative ? "bad" : "neutral");
+      setValue("definedInflows", fmt(definedInflows), "neutral");
+      setValue("consolidationImpact", fmt(consolidationTwoYearImpact), consolidationTwoYearImpact >= 0 ? "good" : "bad");
+      document.getElementById("consolidationHint").textContent = `חיסכון חודשי: ${fmt(monthlyConsolidationSavings)} | יתרה לאיחוד: ${fmt(state.consolidationPayoff)}`;
+    }
+
+    function renderScenarioInsights() {
+      const ranked = scenarioCandidates(state).map(scenarioMetrics).sort(compareScenarios);
+      const best = ranked[0];
+      const conservative = ranked.find((scenario) => scenario.key === "conservative");
+      const consolidation = ranked.find((scenario) => scenario.key === "consolidation");
+      const avoidsNegative = best.minCash >= 0;
+      const consolidationNote = consolidation && conservative && consolidation.minCash > conservative.minCash
+        ? `איחוד תיאורטי משפר את מרווח הביטחון לעומת שמרני ב-${fmt(consolidation.minCash - conservative.minCash)}.`
+        : "איחוד תיאורטי לבד לא משפר את מרווח הביטחון לפי ההנחות הנוכחיות.";
+      document.getElementById("scenarioLead").innerHTML = `
+        <strong>התרחיש הכי טוב לפי יעד לא לרדת ממזומן:</strong> ${best.name}.
+        ${avoidsNegative ? `הוא שומר על יתרה מינימלית של ${fmt(best.minCash)}.` : `גם הוא יורד מתחת לאפס עד ${fmt(best.minCash)}, ולכן צריך לשפר הכנסה/הוצאה/תזמון מזומן.`}
+        ${consolidationNote}
+      `;
+      document.getElementById("scenarioList").innerHTML = ranked.map((scenario, index) => `
+        <article class="scenario-card">
+          <strong>${index + 1}. ${scenario.name}</strong>
+          <span class="label">${scenario.description}</span>
+          <div class="scenario-metrics">
+            <span>מינימום: ${fmt(scenario.minCash)}</span>
+            <span>שנה: ${fmt(scenario.cash12)}</span>
+            <span>שנתיים: ${fmt(scenario.cash24)}</span>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderTable(rows) {
+      document.getElementById("projectionRows").innerHTML = rows.map((row) => `
+        <tr>
+          <td>${row.month}${row.notes.length ? ` <span class="pill">${row.notes.join(" + ")}</span>` : ""}</td>
+          <td class="number">${fmt(row.income)}</td>
+          <td class="number">${fmt(row.living)}</td>
+          <td class="number">${fmt(row.mortgage)}</td>
+          <td class="number">${fmt(row.loanPayment)}</td>
+          <td class="number">${fmt(row.inflow)}</td>
+          <td class="number" style="color:${row.net < 0 ? "var(--red)" : "var(--green)"}">${fmt(row.net)}</td>
+          <td class="number" style="color:${row.cash < 0 ? "var(--red)" : "var(--text)"}">${fmt(row.cash)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function drawChart(canvasId, rows, accessor, options = {}) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(600, Math.floor(rect.width * dpr));
+      canvas.height = Math.floor(230 * dpr);
+      ctx.scale(dpr, dpr);
+
+      const width = canvas.width / dpr;
+      const height = canvas.height / dpr;
+      const pad = { top: 18, right: 42, bottom: 34, left: 22 };
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#fbfcfa";
+      ctx.fillRect(0, 0, width, height);
+
+      const values = rows.map(accessor);
+      const minRaw = Math.min(0, ...values);
+      const maxRaw = Math.max(0, ...values);
+      const span = Math.max(1, maxRaw - minRaw);
+      const min = minRaw - span * 0.08;
+      const max = maxRaw + span * 0.08;
+      const x = (i) => pad.left + (width - pad.left - pad.right) * (i / (rows.length - 1));
+      const y = (v) => pad.top + (height - pad.top - pad.bottom) * (1 - ((v - min) / (max - min)));
+
+      ctx.strokeStyle = "#dce4df";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const yy = pad.top + (height - pad.top - pad.bottom) * (i / 4);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, yy);
+        ctx.lineTo(width - pad.right, yy);
+        ctx.stroke();
+      }
+
+      const zeroY = y(0);
+      ctx.strokeStyle = "#9aa8a2";
+      ctx.beginPath();
+      ctx.moveTo(pad.left, zeroY);
+      ctx.lineTo(width - pad.right, zeroY);
+      ctx.stroke();
+
+      if (options.type === "bar") {
+        const barWidth = Math.max(6, (width - pad.left - pad.right) / rows.length - 4);
+        values.forEach((value, i) => {
+          const xx = x(i) - barWidth / 2;
+          const yy = y(Math.max(0, value));
+          const hh = Math.abs(y(value) - zeroY);
+          ctx.fillStyle = value < 0 ? "#d94d43" : (options.color || "#2563eb");
+          ctx.fillRect(xx, value < 0 ? zeroY : yy, barWidth, Math.max(2, hh));
+        });
+      } else {
+        ctx.strokeStyle = options.color || "#2563eb";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        values.forEach((value, i) => {
+          if (i === 0) ctx.moveTo(x(i), y(value));
+          else ctx.lineTo(x(i), y(value));
+        });
+        ctx.stroke();
+        values.forEach((value, i) => {
+          if (i % 3 !== 0 && i !== rows.length - 1) return;
+          ctx.fillStyle = value < 0 ? "#b42318" : (options.color || "#2563eb");
+          ctx.beginPath();
+          ctx.arc(x(i), y(value), 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      ctx.fillStyle = "#64736d";
+      ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, Arial";
+      ctx.textAlign = "left";
+      ctx.fillText(compactIls.format(maxRaw), 4, pad.top + 4);
+      ctx.fillText(compactIls.format(minRaw), 4, height - pad.bottom);
+      ctx.textAlign = "center";
+      [0, 5, 11, 17, 23].forEach((i) => {
+        ctx.fillText(rows[i].month.replace(" ", "\n"), x(i), height - 10);
+      });
+    }
+
+    function renderCharts(rows) {
+      drawChart("cashChart", rows, (row) => row.cash, { color: "#0f766e" });
+      drawChart("netChart", rows, (row) => row.net, { type: "bar", color: "#2563eb" });
+      drawChart("expenseChart", rows, (row) => row.outflow, { color: "#b7791f" });
+      drawChart("inflowChart", rows, (row) => row.inflow, { type: "bar", color: "#15803d" });
+    }
+
+    function render() {
+      const rows = project(state);
+      renderCards(rows);
+      renderScenarioInsights();
+      renderTable(rows);
+      renderCharts(rows);
+    }
+
+    buildControls();
+    buildMonthSelect("possibleCashMonth", state.possibleCashMonth);
+    buildMonthSelect("consolidationMonth", state.consolidationMonth);
+    bindSwitch("possibleCashEnabled");
+    bindSwitch("consolidationEnabled");
+
+    document.querySelectorAll("[data-preset]").forEach((button) => {
+      button.addEventListener("click", () => applyPreset(button.dataset.preset));
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", exportCurrentSimulator);
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      state = { ...defaults };
+      localStorage.removeItem(storageKey);
+      document.querySelectorAll("[data-preset]").forEach((btn) => btn.classList.toggle("active", btn.dataset.preset === "conservative"));
+      syncForm();
+      render();
+    });
+
+    window.addEventListener("resize", () => render());
+    syncForm();
+    render();
+  </script>
+</body>
+</html>
